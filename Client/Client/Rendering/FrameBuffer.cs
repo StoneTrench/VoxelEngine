@@ -1,20 +1,8 @@
-﻿using System.Linq;
-using VoxelEngine.Engine.Misc;
+﻿using VoxelEngine.Engine.Misc;
 using static OpenGL.GL;
 
 namespace VoxelEngine.Client.Rendering {
 	class FrameBuffer {
-		private	float[] RECT_VERTICES = {
-			// Coords    // texCoords
-			 1.0f, -1.0f,  1.0f, 0.0f,
-			-1.0f, -1.0f,  0.0f, 0.0f,
-			-1.0f,  1.0f,  0.0f, 1.0f,
-
-			 1.0f,  1.0f,  1.0f, 1.0f,
-			 1.0f, -1.0f,  1.0f, 0.0f,
-			-1.0f,  1.0f,  0.0f, 1.0f
-		};
-
 		private uint RECT_VAO, RECT_VBO, FBO, RBO;
 		private uint FRAME_BUFFER_TEXTURE;
 		private Shader FRAME_BUFFER_SHADER;
@@ -26,8 +14,8 @@ namespace VoxelEngine.Client.Rendering {
 			RECT_VBO = glGenBuffer();
 			glBindVertexArray(RECT_VAO);
 			glBindBuffer(GL_ARRAY_BUFFER, RECT_VBO);
-			fixed(float* ptr = &RECT_VERTICES[0])
-				glBufferData(GL_ARRAY_BUFFER, RECT_VERTICES.Length * sizeof(float), ptr, GL_STATIC_DRAW);
+			fixed(float* ptr = &RenderingHandler.RECT_VERTICES[0])
+				glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(float), ptr, GL_STATIC_DRAW);
 			glEnableVertexAttribArray(0);
 			glVertexAttribPointer(0, 2, GL_FLOAT, false, 4 * sizeof(float), (void*)0);
 			glEnableVertexAttribArray(1);
@@ -60,18 +48,16 @@ namespace VoxelEngine.Client.Rendering {
 			FRAME_BUFFER_SHADER = Shader.CreateFromFiles(FileManager.ResourcesPath + "Shaders/frameBuffer.frag", FileManager.ResourcesPath + "Shaders/frameBuffer.vert");
 			FRAME_BUFFER_SHADER.UseProgram();
 			glUniform1f(FRAME_BUFFER_SHADER.GetUniformLocation("u_screenTexture"), 0);
-		}
 
-		public unsafe void UpdateSize() {
-			var size = RenderingHandler.GetWindowSize();
+			RenderingHandler.WindowResizeEvent += (_, size) => {
+				if (size.X == 0 || size.Y == 0) return;
 
-			if (size.X == 0 || size.Y == 0) return;
+				glBindRenderbuffer(RBO);
+				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)size.X, (int)size.Y);
 
-			glBindRenderbuffer(RBO);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)size.X, (int)size.Y);
-
-			glBindTexture(GL_TEXTURE_2D, FRAME_BUFFER_TEXTURE);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (int)size.X, (int)size.Y, 0, GL_RGB, GL_UNSIGNED_BYTE, null);
+				glBindTexture(GL_TEXTURE_2D, FRAME_BUFFER_TEXTURE);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (int)size.X, (int)size.Y, 0, GL_RGB, GL_UNSIGNED_BYTE, null);
+			};
 		}
 
 		public void PreRender() {
@@ -85,12 +71,14 @@ namespace VoxelEngine.Client.Rendering {
 			glActiveTexture(GL_TEXTURE0);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, true ? FRAME_BUFFER_TEXTURE : ShadowMap.m_instance.SHADOWMAP_TEXTURE);
+
 			FRAME_BUFFER_SHADER.UseProgram();
 			glUniform1f(FRAME_BUFFER_SHADER.GetUniformLocation("u_gamma"), GAMMA_CORRECTION);
 			glBindVertexArray(RECT_VAO);
 			glDisable(GL_DEPTH_TEST);
 
-			glBindTexture(GL_TEXTURE_2D, true ? FRAME_BUFFER_TEXTURE : ShadowMap.m_instance.SHADOWMAP_TEXTURE);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
 

@@ -1,13 +1,28 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 using GLFW;
 using VoxelEngine.Engine.Misc;
 using static OpenGL.GL;
 
 namespace VoxelEngine.Client.Rendering {
 	static class RenderingHandler {
+        public static readonly float[] RECT_VERTICES = {
+			// Coords    // texCoords
+			 1.0f, -1.0f,  1.0f, 0.0f,
+            -1.0f, -1.0f,  0.0f, 0.0f,
+            -1.0f,  1.0f,  0.0f, 1.0f,
+
+             1.0f,  1.0f,  1.0f, 1.0f,
+             1.0f, -1.0f,  1.0f, 0.0f,
+            -1.0f,  1.0f,  0.0f, 1.0f
+        };
+
         public static Window WINDOW { private set; get; } = Window.None;
 
-		public static void CreateWindow(int width, int height, string title, int swapInterval = 1) {
+        public static event EventHandler<Vector2> WindowResizeEvent;
+        public static event EventHandler<uint> ButtonPressedEvent;
+
+        public static void CreateWindow(int width, int height, string title, int swapInterval = 1) {
             if (WINDOW != Window.None) {
                 ConOut.Error("Window creation failed. Window already exists");
                 return;
@@ -21,8 +36,7 @@ namespace VoxelEngine.Client.Rendering {
             Glfw.WindowHint(Hint.Doublebuffer, true);
             Glfw.WindowHint(Hint.Decorated, true);
 
-
-            // Create window, make the OpenGL context current on the thread, and import graphics functions
+			// Create window, make the OpenGL context current on the thread, and import graphics functions
             WINDOW = Glfw.CreateWindow(width, height, title, Monitor.None, Window.None);
 
             if(WINDOW == Window.None) {
@@ -35,6 +49,12 @@ namespace VoxelEngine.Client.Rendering {
             var x = (screen.Width - width) / 2;
             var y = (screen.Height - height) / 2;
             Glfw.SetWindowPosition(WINDOW, x, y);
+
+            Glfw.SetWindowSizeCallback(WINDOW, (_, w, h) => {
+                WindowResizeEvent?.Invoke(WINDOW, new Vector2(w, h));
+                SetViewPortSize(new Vector2(w, h));
+            });
+            Glfw.SetCharCallback(WINDOW, (_, codePoint) => ButtonPressedEvent.Invoke(WINDOW, codePoint));
 
             Glfw.MakeContextCurrent(WINDOW);
             Import(Glfw.GetProcAddress);

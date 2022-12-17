@@ -12,6 +12,7 @@ using VoxelEngine.Client.Networking;
 using VoxelEngine.Engine.GameAssets.Entities;
 using System.Linq;
 using VoxelEngine.Engine.Physics;
+using VoxelEngine.Client.Rendering.GUI;
 
 namespace VoxelEngine.Client {
 	class ClientGameManager : GameManager {
@@ -25,6 +26,7 @@ namespace VoxelEngine.Client {
 		Camera camera;
 		ClientChunkManager chunkManager;
 		ClientEntityManager entityManager;
+		Canvas canvas;
 
 		float networkUpdateTimer = 0;
 
@@ -155,6 +157,9 @@ namespace VoxelEngine.Client {
 			entityManager = new ClientEntityManager();
 
 			camera = new Camera(new Vector3(0, 0, 0), 60);
+			canvas = new Canvas();
+
+			canvas.AddTexture(new Vector2(0, 0), "crosshairs.png").SetTransform(Vector2.Zero, new Vector2(10) / DEFAULT_WINDOW_HEIGHT);
 		}
 
 		private Vector3 playerChunkPos = Vector3.UnitY;
@@ -196,7 +201,6 @@ namespace VoxelEngine.Client {
 			#region SetFrameBufferSize
 			RenderingHandler.SetViewPortSize(RenderingHandler.GetWindowSize());
 			// This would reset the ShadowMap texture binding so do it before the ShadowMap post render
-			FrameBuffer.UpdateSize();
 			#endregion
 			ShadowMap.PostRender();
 			FrameBuffer.PreRender();
@@ -207,6 +211,7 @@ namespace VoxelEngine.Client {
 
 			chunkManager.Render(false);
 			entityManager.Render(false);
+			canvas.Render();
 
 			FrameBuffer.PostRender();
 			Glfw.SwapBuffers(RenderingHandler.WINDOW);

@@ -20,9 +20,8 @@ namespace VoxelEngine.Client.Rendering {
 				glBindVertexArray(VERTEX_ARRAY_OBJECT);
 				glBindBuffer(GL_ARRAY_BUFFER, VERTEX_BUFFER_OBJECT);
 
-				fixed (float* ptr = &vertices[0]) {
+				fixed (float* ptr = &vertices[0])
 					glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.Length, ptr, GL_STATIC_DRAW);
-				}
 
 				// Position
 				glVertexAttribPointer(0, 3, GL_FLOAT, false, vertexSize * sizeof(float), (void*)0);
@@ -53,7 +52,6 @@ namespace VoxelEngine.Client.Rendering {
 			if (verticesLength > 0) {
 				glBindVertexArray(VERTEX_ARRAY_OBJECT);
 				glDrawArrays(GL_TRIANGLES, 0, verticesLength);
-				glBindVertexArray(0);
 			}
 		}
 
