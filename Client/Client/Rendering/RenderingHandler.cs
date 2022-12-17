@@ -54,7 +54,7 @@ namespace VoxelEngine.Client.Rendering {
                 WindowResizeEvent?.Invoke(WINDOW, new Vector2(w, h));
                 SetViewPortSize(new Vector2(w, h));
             });
-            Glfw.SetCharCallback(WINDOW, (_, codePoint) => ButtonPressedEvent.Invoke(WINDOW, codePoint));
+            Glfw.SetCharCallback(WINDOW, (_, codePoint) => ButtonPressedEvent?.Invoke(WINDOW, codePoint));
 
             Glfw.MakeContextCurrent(WINDOW);
             Import(Glfw.GetProcAddress);
