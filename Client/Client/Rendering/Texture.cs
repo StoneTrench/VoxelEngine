@@ -10,10 +10,9 @@ namespace VoxelEngine.Client.Rendering {
 		private readonly uint TEXTURE_ID;
 		private readonly int TEXTURE_UNIT;
 
-		public unsafe Texture(string textureSourceFilePath, int unit = 0) {
+		public unsafe Texture(Image image, int unit = 0) {
 			TEXTURE_UNIT = unit;
 
-			Image image = Image.FromFile(textureSourceFilePath);
 			image.RotateFlip(RotateFlipType.RotateNoneFlipX);
 			byte[] fileData = ImageToBitmapByteArray(image, PixelFormat.Format32bppPArgb);
 
@@ -82,6 +81,16 @@ namespace VoxelEngine.Client.Rendering {
 					imageIn.Save(ms, ImageFormat.Bmp);
 					return ms.ToArray().Skip(54).ToArray();
 				}
+			}
+		}
+
+		public static Texture CreateFromFile(string textureSourceFilePath) {
+			try {
+				return new Texture(Image.FromFile(textureSourceFilePath));
+			}
+			catch (System.Exception e) {
+				ConOut.Error("CreateFromFiles:", e);
+				return null;
 			}
 		}
 	}

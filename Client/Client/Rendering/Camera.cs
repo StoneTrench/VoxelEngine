@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using VoxelEngine.Engine.Entities;
 using VoxelEngine.Engine.Misc;
 
 namespace VoxelEngine.Client.Rendering {
@@ -10,11 +11,10 @@ namespace VoxelEngine.Client.Rendering {
 		public Vector3 rotation;
 		public float FOVrad;
 
-		private float speed = 10;
-		private float sensitivity = 60;
-
 		public float farPlane = 1000.0f;
 		public float nearPlane = 0.1f;
+
+		private Entity attachedTo;
 
 		public Camera(Vector3 position, float fOV) {
 			this.position = position;
@@ -31,67 +31,21 @@ namespace VoxelEngine.Client.Rendering {
 		}
 
 
-		bool lockMouse = false;
-
 		public Vector3 forward {
 			get {
 				return Vector3.Transform(Vector3.UnitZ, Matrix4x4.CreateFromYawPitchRoll(rotation.Y, rotation.X, rotation.Z));
 			}
 		}
 
-		public void TestMovement() {
-			Vector3 facing = Vector3.Transform(Vector3.UnitZ, Matrix4x4.CreateFromYawPitchRoll(rotation.Y, 0, 0));
+		public void AttachToEntity(Entity entity) {
+			attachedTo = entity;
+		}
 
-			if (Input.GetButton(GLFW.Keys.W)) {
-				position += speed * facing * ClientTime.TimeDeltaF;
-			}
-			if (Input.GetButton(GLFW.Keys.A)) {
-				position += speed * -Vector3.Normalize(Vector3.Cross(facing, Vector3.UnitY)) * ClientTime.TimeDeltaF;
-			}
-			if (Input.GetButton(GLFW.Keys.S)) {
-				position += speed * -facing * ClientTime.TimeDeltaF;
-			}
-			if (Input.GetButton(GLFW.Keys.D)) {
-				position += speed * Vector3.Normalize(Vector3.Cross(facing, Vector3.UnitY)) * ClientTime.TimeDeltaF;
-			}
+		public void Update() {
+			if (attachedTo == null) return;
 
-			if (Input.GetButton(GLFW.Keys.Space)) {
-				position += speed * Vector3.UnitY * ClientTime.TimeDeltaF;
-			}
-			if (Input.GetButton(GLFW.Keys.LeftShift)) {
-				position += speed * -Vector3.UnitY * ClientTime.TimeDeltaF;
-			}
-
-			Vector2 windowSize = RenderingHandler.GetWindowSize();
-
-			if (!lockMouse && Input.GetMouseButton(GLFW.MouseButton.Left)) {
-				lockMouse = true;
-
-				RenderingHandler.SetCursorVisibility(false);
-				Input.SetCursorPosition(windowSize / 2);
-			}
-
-			if (lockMouse && Input.GetButton(GLFW.Keys.Escape)) {
-				lockMouse = false;
-
-				RenderingHandler.SetCursorVisibility(true);
-			}
-
-			if (lockMouse) {
-				// When the size has an odd number a 0.5 is left behind on the mouse that causes drift, this removes the first bit. Only allowing even numbers.
-				windowSize.X = ((int)windowSize.X) >> 1 << 1;
-				windowSize.Y = ((int)windowSize.Y) >> 1 << 1;
-
-				Vector2 mouse = Input.GetCursorPosition();
-				Vector2 rot = sensitivity * (mouse - (windowSize / 2)) / windowSize * 0.008f;
-
-				Vector3 newRotation = rotation + new Vector3(rot.Y, -rot.X, 0);
-				float limits = MathF.PI / 2 - 0.01f;
-				newRotation.X = Utility.Clamp(newRotation.X, -limits, limits);
-				rotation = newRotation;
-
-				Input.SetCursorPosition(windowSize / 2);
-			}
+			position = attachedTo.position;
+			rotation = attachedTo.rotation;
 		}
 	}
 }

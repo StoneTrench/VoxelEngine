@@ -43,8 +43,7 @@ namespace VoxelEngine.Engine.Physics {
 			new int[] { 1, 6, 5, 2 }
 		};
 
-		public static readonly float PhysicsMultiplier = 0.1f;
-		public static readonly Vector3 gravity = new Vector3(0, -1f, 0) * PhysicsMultiplier;
+		public static readonly Vector3 gravity = new Vector3(0, -1f, 0);
 
 		/// <summary>
 		/// </summary>

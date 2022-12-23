@@ -6,26 +6,17 @@ using VoxelEngine.Engine.World;
 
 namespace VoxelEngine.Engine.Entities {
 	class EntityManager {
-		private static uint UUIDCounter = 0;
+		private static uint UUIDCounter = 1;
 
 		// Maps entities into chunks
 		private Dictionary<Vector3, List<Entity>> unloadedEntities;
 		public List<Entity> ActiveEntities;
-
-		#region Events
-
-		public event EventHandler<IEnumerable<Entity>> RecievedEntities;
-
-		#endregion
 
 		public EntityManager() {
 			unloadedEntities = new Dictionary<Vector3, List<Entity>>();
 			ActiveEntities = new List<Entity>();
 		}
 
-		public IEnumerable<Entity> GetVisibleEntities(Vector3 chunk_pos, byte renderDistance) {
-			return ActiveEntities.Where(e => ChunkManager.InRenderDistance(chunk_pos, renderDistance, e.position));
-		}
 		public void ReassignActiveEntities(Vector3[] chunk_poss, byte[] renderDistances) {
 			foreach (var active in ActiveEntities) {
 				Vector3 entity_chunk_pos = ChunkManager.GetChunkPosition(active.position);
@@ -65,24 +56,6 @@ namespace VoxelEngine.Engine.Entities {
 		public Entity SummonEntity(ushort entity_id, Vector3 position) {
 			ActiveEntities.Add(new Entity(new EntityData(GenerateUUID(), entity_id, position, Vector3.Zero, Vector3.Zero)));
 			return ActiveEntities[^1];
-		}
-	
-		public void RecieveEntities(IEnumerable<EntityData> entities) {
-			List<Entity> result = new List<Entity>();
-
-			foreach (var entity in entities) {
-				int index = GetActiveEntityIndex(entity.UUID);
-				if (index != -1) {
-					ActiveEntities[index].entityData = entity;
-					result.Add(ActiveEntities[index]);
-				}
-				else {
-					ActiveEntities.Add(new Entity(entity));
-					result.Add(ActiveEntities[^1]);
-				}
-			}
-
-			RecievedEntities?.Invoke(this, result);
 		}
 	}
 }

@@ -43,6 +43,8 @@ namespace VoxelEngine.Client.Networking {
 		public static void CloseSocket(string message) {
 			if (!socketReady) return;
 
+			ConOut.Log("Connection closed. Client disconnected:\n\t" + message);
+
 			try {
 				stream.Close();
 			}

@@ -22,8 +22,8 @@ namespace VoxelEngine.Engine.Entities {
 			health = entity.health;
 		}
 
-		public override void Update(ChunkManager chunkManager) {
-			base.Update(chunkManager);
+		public override void Update(ChunkManager chunkManager, float deltaTime) {
+			base.Update(chunkManager, deltaTime);
 		}
 	
 		public virtual void DealDamage(Entity source, byte damage) {

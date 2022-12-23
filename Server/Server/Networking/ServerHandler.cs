@@ -174,6 +174,7 @@ namespace VoxelEngine.Networking {
 
 		public Vector3 chunk_pos;
 		public byte renderDistance;
+		public uint entityUUID;
 
 		public ServerClient(TcpClient tcp) {
 			this.username = null;

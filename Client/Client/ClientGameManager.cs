@@ -13,6 +13,7 @@ using VoxelEngine.Engine.GameAssets.Entities;
 using System.Linq;
 using VoxelEngine.Engine.Physics;
 using VoxelEngine.Client.Rendering.GUI;
+using VoxelEngine.Engine.Entities;
 
 namespace VoxelEngine.Client {
 	class ClientGameManager : GameManager {
@@ -43,7 +44,7 @@ namespace VoxelEngine.Client {
 					ushort FPS = (ushort)MathF.Floor(1 / timeDiff * frameCounter);
 					float ms = timeDiff / frameCounter * 1000f;
 
-					RenderingHandler.SetWindowTitle(string.Format("{0} — {1} fps {2} ms delta: {3}", DEFAULT_WINDOW_TITLE, FPS, ms, ClientTime.TimeDeltaF));
+					RenderingHandler.SetWindowTitle(string.Format("{0} — {1} fps {2} ms", DEFAULT_WINDOW_TITLE, FPS, ms));
 
 					prevTime = ClientTime.TotalElapsedSecondsF;
 					frameCounter = 0;
@@ -92,7 +93,7 @@ namespace VoxelEngine.Client {
 				} },
 				{ "Server_EntityData", (clientID, packet) => {
 					Server_EntityData p = (Server_EntityData)packet;
-					entityManager.entityManager.RecieveEntities(p.entities);
+					entityManager.RecieveEntities(p.entities);
 				} }
 			});
 
@@ -107,7 +108,11 @@ namespace VoxelEngine.Client {
 			Random rand = new Random();
 
 			ClientHandler.username = "Player" + rand.Next();
-			ClientHandler.ConnectToServer("localhost", 13000);
+
+			string address = Console.ReadLine();
+			int port = address.Contains(":") ? int.Parse(address.Split(":")[1]) : 13000;
+
+			ClientHandler.ConnectToServer(address.Replace(":" + port, ""), port);
 		}
 
 		private ChunkObject ConvertPacketToChunk(Server_ChunkData chunk) {
@@ -137,7 +142,8 @@ namespace VoxelEngine.Client {
 				new VoxelType("planks", "Planks", true, true, 6)
 			);
 			GameAssetsHandler.SetEntityTypes(
-				new EntityType("unknown", new Vector3(0, 0, 0), new Vector3(1, 2, 1))
+				new EntityType("unknown", new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
+				new EntityType("player", new Vector3(0, 0, 0), new Vector3(0.5f, 1.8f, 0.5f))
 			);
 
 			new DirectionalLight(-new Vector3(1, 0.5f, -1));
@@ -152,44 +158,40 @@ namespace VoxelEngine.Client {
 				texturesPath + "right.jpg"
 			);
 			FrameBuffer = new FrameBuffer();
-			ShadowMap = new ShadowMap(2048 * 4, 1000);
+			ShadowMap = new ShadowMap(1024 * 16, 500);
 			chunkManager = new ClientChunkManager();
 			entityManager = new ClientEntityManager();
+			entityManager.player = new LivingEntity(new LivingEntityData(new EntityData(0, GameAssetsHandler.GetEntityID("player"), new Vector3(0, 64, 0), Vector3.Zero, Vector3.Zero), 20));
 
 			camera = new Camera(new Vector3(0, 0, 0), 60);
+			camera.AttachToEntity(entityManager.player);
 			canvas = new Canvas();
 
 			canvas.AddTexture(new Vector2(0, 0), "crosshairs.png").SetTransform(Vector2.Zero, new Vector2(10) / DEFAULT_WINDOW_HEIGHT);
 		}
 
-		private Vector3 playerChunkPos = Vector3.UnitY;
-
 		private void Update() {
-			camera.TestMovement();
+			RenderingHandler.HandleLockMousePre();
+
 			chunkManager.Update();
-			entityManager.Update();
+			entityManager.Update(); // handles player stuff too
+			camera.Update();
+
+			RenderingHandler.HandleLockMousePost();
 
 			if (Input.GetMouseButton(MouseButton.Right)) {
 				Vector3 forward = camera.forward;
 				RayHit hit = PhysicsUtility.CastRay(chunkManager.chunkManager, camera.position, forward);
 				if (hit.hasHit) {
 					ushort voxel_id = GameAssetsHandler.GetVoxelID("planks");
-					//chunkManager.chunkManager.SetVoxel((hit.global_pos - forward).Floor(), voxel_id);
 					ClientHandler.SendToServer_Exposed(new Client_BlockPlace((hit.global_pos - forward).Floor(), voxel_id));
 				}
 			}
 			if (Input.GetMouseButton(MouseButton.Left)) {
 				RayHit hit = PhysicsUtility.CastRay(chunkManager.chunkManager, camera.position, camera.forward);
 				if (hit.hasHit) {
-					//chunkManager.chunkManager.SetVoxel(hit.global_pos.Floor(), GameAssetsHandler.GetVoxelID("air"));
 					ClientHandler.SendToServer_Exposed(new Client_BlockBreak(hit.global_pos.Floor()));
 				}
-			}
-
-			Vector3 newPlayerChunkPos = ChunkManager.GetChunkPosition(camera.position);
-			if(newPlayerChunkPos != playerChunkPos) {
-				playerChunkPos = newPlayerChunkPos;
-				ClientHandler.SendToServer_Exposed(new Client_PlayerChunkPosition(playerChunkPos, 4));
 			}
 		}
 
@@ -221,6 +223,7 @@ namespace VoxelEngine.Client {
 			FrameBuffer.Delete();
 			ShadowMap.Delete();
 			skybox.Delete();
+			canvas.Delete();
 
 			RenderingHandler.Close();
 			ClientHandler.CloseSocket("closing");

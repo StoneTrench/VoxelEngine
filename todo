@@ -1,0 +1,11 @@
+// re-enable chunk loading.
+add some more interesting structures.
+
+// player entity
+
+//gui handler
+//	to unlock/lock mouse
+//	to add a simple api for constructing guis
+	text
+buttons
+implement main menu

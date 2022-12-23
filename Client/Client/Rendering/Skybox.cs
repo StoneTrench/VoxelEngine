@@ -86,7 +86,8 @@ namespace VoxelEngine.Client.Rendering {
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 			for (int i = 0; i < 6; i++) {
-				Image image = Image.FromFile(facesCubemap[i]);
+				Image image = null;
+				try { image = Image.FromFile(facesCubemap[i]); } catch (System.Exception e) { ConOut.Error("Error loading texture:\n", e); }
 
 				if (image == null) {
 					ConOut.Error("Failed to load texture:", facesCubemap[i]);

@@ -52,17 +52,17 @@ namespace VoxelEngine.Engine.Entities {
 			}
 		}
 	
-		public virtual void Update(ChunkManager chunkManager) {
+		public virtual void Update(ChunkManager chunkManager, float deltaTime) {
 			if (chunkManager.GetChunkFromWorldPos(position) == null) return;
 
-			velocity += PhysicsUtility.gravity;
+			velocity += PhysicsUtility.gravity * deltaTime;
 
-			HandleCollision(chunkManager);
+			HandleCollision(chunkManager, deltaTime);
 
 			position += velocity;
 		}
 
-		private void HandleCollision(ChunkManager chunkManager) {
+		private void HandleCollision(ChunkManager chunkManager, float deltaTime) {
 			Vector3 anticipatedPosition = position + (velocity / 2);
 
 			if (collider.IsCollidingOnSide(chunkManager, anticipatedPosition, 0) && velocity.Z < 0) // back
@@ -70,10 +70,12 @@ namespace VoxelEngine.Engine.Entities {
 			if (collider.IsCollidingOnSide(chunkManager, anticipatedPosition, 1) && velocity.Z > 0) // front
 				velocity.Z = 0;
 
-			if (collider.IsCollidingOnSide(chunkManager, anticipatedPosition, 2) && velocity.Y > 0) // top
+			if (collider.IsCollidingOnSide(chunkManager, anticipatedPosition, 2) && velocity.Y > 0) {// top
 				velocity.Y = 0;
-			if (collider.IsCollidingOnSide(chunkManager, anticipatedPosition, 3) && velocity.Y < 0) // bottom
+			}
+			if (collider.IsCollidingOnSide(chunkManager, anticipatedPosition, 3) && velocity.Y < 0) {// bottom
 				velocity.Y = 0;
+			}
 
 			if (collider.IsCollidingOnSide(chunkManager, anticipatedPosition, 4) && velocity.X < 0) // left
 				velocity.X = 0;

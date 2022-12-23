@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Numerics;
 using VoxelEngine.Engine.Misc;
-using VoxelEngine.Engine.Networking;
 
 namespace VoxelEngine.Engine.World {
 	class ChunkObject {

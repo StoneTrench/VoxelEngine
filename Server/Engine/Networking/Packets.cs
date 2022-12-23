@@ -28,24 +28,14 @@ namespace VoxelEngine.Engine.Networking {
     }
 
     [Serializable]
-    struct Client_PlayerChunkPosition : IPacket {
-        public int position_x;
-        public int position_y;
-        public int position_z;
+    struct Client_PlayerPosition : IPacket {
+        public float[] position;
         public byte renderDistance;
 
-        public Client_PlayerChunkPosition(Vector3 chunk_pos, byte renderDistance) {
-            this.position_x = (int)chunk_pos.X;
-            this.position_y = (int)chunk_pos.Y;
-            this.position_z = (int)chunk_pos.Z;
+        public Client_PlayerPosition(Vector3 position, byte renderDistance) {
+            this.position = new SerializableVector3(position).array;
             this.renderDistance = (byte)renderDistance;
         }
-
-        public Vector3 position {
-			get {
-                return new Vector3(position_x, position_y, position_z);
-			}
-		}
     }
 
     [Serializable]
@@ -104,11 +94,11 @@ namespace VoxelEngine.Engine.Networking {
         public int[] chunk_pos;
 
         public SerializableVoxelObject[] palette;
-        public byte[] voxels;
+        public short[] voxels;
 
         public Server_ChunkData(ChunkObject chunk) {
             List<SerializableVoxelObject> palette = new List<SerializableVoxelObject>();
-            List<byte> voxels = new List<byte>();
+            List<short> voxels = new List<short>();
 
             for (int x = 0; x < ChunkManager.CHUNK_SIZE.x; x++) {
                 for (int y = 0; y < ChunkManager.CHUNK_SIZE.y; y++) {
@@ -116,11 +106,11 @@ namespace VoxelEngine.Engine.Networking {
                         var vox = new SerializableVoxelObject(chunk.voxels[x, y, z]);
                         int index = palette.IndexOf(vox);
                         if (index == -1) {
-                            voxels.Add((byte)palette.Count);
+                            voxels.Add((short)palette.Count);
                             palette.Add(vox);
                         }
                         else
-                            voxels.Add((byte)index);
+                            voxels.Add((short)index);
                     }
                 }
             }

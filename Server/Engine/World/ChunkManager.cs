@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 using VoxelEngine.Engine.Misc;
 
 namespace VoxelEngine.Engine.World {
@@ -59,7 +58,7 @@ namespace VoxelEngine.Engine.World {
 			if (!Chunks.ContainsKey(chunk_pos)) return null;
 			return Chunks[chunk_pos];
 		}
-		
+
 		public VoxelObject GetVoxel(Vector3 world_pos) {
 			ChunkObject chunk = GetChunkFromWorldPos(world_pos);
 			if (chunk == null) return null;
@@ -71,7 +70,7 @@ namespace VoxelEngine.Engine.World {
 			if (chunk == null) return false;
 			Vector3Byte local_pos = new Vector3Byte(world_pos - chunk.CHUNK_WORLD_POS);
 			chunk.voxels[local_pos.x, local_pos.y, local_pos.z] = new VoxelObject(voxel_ID);
-			if(sendEvent) ChunkVoxelUpdate?.Invoke(chunk, world_pos);
+			if (sendEvent) ChunkVoxelUpdate?.Invoke(chunk, world_pos);
 			return true;
 		}
 		public bool[] SetVoxels(StructureVoxel[] voxels, bool sendEvent = true) {
@@ -84,15 +83,15 @@ namespace VoxelEngine.Engine.World {
 
 			return result;
 		}
-		
+
 
 		public static void ChunkLoopXYZ(int renderDistance, Action<int, int, int> action) {
 			for (int x = -renderDistance; x < renderDistance; x++) {
-				for (int y = -renderDistance; y < renderDistance; y++) {
-					for (int z = -renderDistance; z < renderDistance; z++) {
-						action.Invoke(x, y, z);
-					}
+				//for (int y = -renderDistance; y < renderDistance; y++) {
+				for (int z = -renderDistance; z < renderDistance; z++) {
+					action.Invoke(x, 0, z);
 				}
+				//}
 			}
 		}
 		public static bool InRenderDistance(Vector3 chunk_pos, byte renderDistance, Vector3 world_pos) {

@@ -27,8 +27,8 @@ namespace VoxelEngine.Client {
 			ChunksRenderMesh = new Queue<Vector3>();
 
 			chunk_shader = Shader.CreateFromFiles(FileManager.ResourcesPath + "Shaders/default.frag", FileManager.ResourcesPath + "Shaders/default.vert");
-			chunk_texture_diff = new Texture(FileManager.ResourcesPath + "Textures/voxel_diff.png");
-			chunk_texture_spec = new Texture(FileManager.ResourcesPath + "Textures/voxel_spec.png");
+			chunk_texture_diff = Texture.CreateFromFile(FileManager.ResourcesPath + "Textures/voxel_diff.png");
+			chunk_texture_spec = Texture.CreateFromFile(FileManager.ResourcesPath + "Textures/voxel_spec.png");
 
 			chunkManager = new ChunkManager();
 

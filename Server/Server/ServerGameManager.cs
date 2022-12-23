@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
+
 using VoxelEngine.Engine.Entities;
 using VoxelEngine.Engine.GameAssets;
 using VoxelEngine.Engine.GameAssets.Entities;
@@ -41,12 +42,10 @@ namespace VoxelEngine {
 			RegisterServerHandles();
 
 			ConOut.SetTitle($"{Program.GAME_TITLE} {Program.GAME_VERSION} Server");
-			ServerHandler.Initialize(13000);
+			ServerHandler.Initialize(25565);
 		}
 
 		private void RegisterServerHandles() {
-			List<int> test_block_chunk_update = new List<int>();
-
 			PacketHandler.RegisterHandlers(new Dictionary<string, Action<short, IPacket>>() {
 				{ "Client_ConnetionToServerRequest", (clientID, packet) => {
 					Client_ConnetionToServerRequest p = (Client_ConnetionToServerRequest)packet;
@@ -59,22 +58,29 @@ namespace VoxelEngine {
 					p.text = $"<{ServerHandler.clients[clientID].username}> {p.text}";
 					SendChatMessage(p.text);
 				} },
-				{ "Client_PlayerChunkPosition", (clientID, packet) => {
-					Client_PlayerChunkPosition p = (Client_PlayerChunkPosition)packet;
+				{ "Client_PlayerPosition", (clientID, packet) => {
+					Client_PlayerPosition p = (Client_PlayerPosition)packet;
 					byte renderDistance = Math.Min(renderDistanceLimit, p.renderDistance);
+					Vector3 player_position = new SerializableVector3(p.position).vector;
 
-					ServerHandler.clients[clientID].chunk_pos = p.position;
+					// Recieve player entity
+					Entity player_entity = entityManager.GetEntity(ServerHandler.clients[clientID].entityUUID);
+					if(player_entity == null)
+						ServerHandler.clients[clientID].entityUUID = entityManager.SummonEntity(GameAssetsHandler.GetEntityID("player"), player_position).UUID;
+					else player_entity.position = player_position;
+
+					Vector3 player_chunk_pos = ChunkManager.GetChunkPosition(player_position);
+
+					if (player_chunk_pos.Equals(ServerHandler.clients[clientID].chunk_pos) && renderDistance == ServerHandler.clients[clientID].renderDistance) return;
+
+					ServerHandler.clients[clientID].chunk_pos = player_chunk_pos;
 					ServerHandler.clients[clientID].renderDistance = renderDistance;
 
 					entityManager.ReassignActiveEntities(ServerHandler.clients.Select(e => e.chunk_pos).ToArray(), ServerHandler.clients.Select(e => e.renderDistance).ToArray());
 
-					if(test_block_chunk_update.Contains(clientID)) return;
-					test_block_chunk_update.Add(clientID);
-
+					// Send chunks
 					ChunkManager.ChunkLoopXYZ(renderDistance + 3, (x, y, z) => {
-						if(y != 0) return;
-
-						Vector3 chunk_pos = new Vector3(x, y, z) + p.position;
+						Vector3 chunk_pos = new Vector3(x, y, z) + player_chunk_pos;
 						ChunkObject chunk = chunkManager.GetChunk(chunk_pos);
 
 						if(chunk == null)
@@ -133,7 +139,8 @@ namespace VoxelEngine {
 				new VoxelType("planks", "Planks", true, true, 6)
 			);
 			GameAssetsHandler.SetEntityTypes(
-				new EntityType("unknown", new Vector3(0, 0, 0), new Vector3(1, 2, 1))
+				new EntityType("unknown", new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
+				new EntityType("player", new Vector3(0, 0, 0), new Vector3(0.5f, 1.8f, 0.5f))
 			);
 
 			entityManager.SummonEntity(0, new Vector3(0, 64, 0));
@@ -146,9 +153,9 @@ namespace VoxelEngine {
 				ServerHandler.NetworkUpdate();
 				WorldGenerator.ApplyModifications(chunkManager);
 
-				foreach (var entity in entityManager.ActiveEntities) {
-					entity.Update(chunkManager);
-				}
+				foreach (var entity in entityManager.ActiveEntities)
+					if(entity.ENTITY_TYPE.name != "player")
+					entity.Update(chunkManager, 0.01f);
 
 				EntityUpdate();
 			}
@@ -161,7 +168,9 @@ namespace VoxelEngine {
 			if (entityPacketTimer < 3) return;
 
 			foreach (var client in ServerHandler.clients.ToArray())
-				ServerHandler.SendToClients_Exposed(new Server_EntityData(entityManager.GetVisibleEntities(client.chunk_pos, client.renderDistance)), client);
+				ServerHandler.SendToClients_Exposed(new Server_EntityData(
+					entityManager.ActiveEntities.Where(e => ChunkManager.InRenderDistance(client.chunk_pos, client.renderDistance, e.position) && e.UUID != client.entityUUID)
+				), client);
 			entityPacketTimer = 0;
 		}
 

@@ -5,7 +5,7 @@ using VoxelEngine.Engine.Misc;
 using static OpenGL.GL;
 
 namespace VoxelEngine.Client.Rendering {
-	static class RenderingHandler {
+    static class RenderingHandler {
         public static readonly float[] RECT_VERTICES = {
 			// Coords    // texCoords
 			 1.0f, -1.0f,  1.0f, 0.0f,
@@ -26,7 +26,7 @@ namespace VoxelEngine.Client.Rendering {
             if (WINDOW != Window.None) {
                 ConOut.Error("Window creation failed. Window already exists");
                 return;
-			}
+            }
 
             // Prepare context
             Glfw.WindowHint(Hint.ClientApi, ClientApi.OpenGL);
@@ -36,13 +36,13 @@ namespace VoxelEngine.Client.Rendering {
             Glfw.WindowHint(Hint.Doublebuffer, true);
             Glfw.WindowHint(Hint.Decorated, true);
 
-			// Create window, make the OpenGL context current on the thread, and import graphics functions
+            // Create window, make the OpenGL context current on the thread, and import graphics functions
             WINDOW = Glfw.CreateWindow(width, height, title, Monitor.None, Window.None);
 
-            if(WINDOW == Window.None) {
+            if (WINDOW == Window.None) {
                 ConOut.Error("Window creation failed");
                 return;
-			}
+            }
 
             // Center window
             var screen = Glfw.PrimaryMonitor.WorkArea;
@@ -77,14 +77,14 @@ namespace VoxelEngine.Client.Rendering {
         public static bool ShouldClose {
             get {
                 return Glfw.WindowShouldClose(WINDOW);
-			}
-		}
+            }
+        }
 
         public static void Close() {
             ConOut.Log("Closing...");
             Glfw.DestroyWindow(WINDOW);
             Glfw.Terminate();
-		}
+        }
 
         public static Vector2 GetWindowPosition() {
             Glfw.GetWindowPosition(WINDOW, out int x, out int y);
@@ -93,10 +93,34 @@ namespace VoxelEngine.Client.Rendering {
 
 
         public static void SetCursorVisibility(bool visible) {
-/*#define GLFW_CURSOR_NORMAL          0x00034001
-#define GLFW_CURSOR_HIDDEN          0x00034002
-#define GLFW_CURSOR_DISABLED        0x00034003*/
+            /*#define GLFW_CURSOR_NORMAL          0x00034001
+            #define GLFW_CURSOR_HIDDEN          0x00034002
+            #define GLFW_CURSOR_DISABLED        0x00034003*/
             Glfw.SetInputMode(WINDOW, InputMode.Cursor, visible ? 0x00034001 : 0x00034002);
+        }
+
+
+        public static bool lockMouse { get; private set; } = false;
+        public static void HandleLockMousePre() {
+            Vector2 windowSize = GetWindowSize();
+
+            if (!lockMouse && Input.GetMouseButton(MouseButton.Left)) {
+                lockMouse = true;
+
+                SetCursorVisibility(false);
+                Input.SetCursorPosition(windowSize / 2);
+            }
+
+            if (lockMouse && Input.GetButton(Keys.Escape)) {
+                lockMouse = false;
+
+                SetCursorVisibility(true);
+            }
+        }
+
+        public static void HandleLockMousePost() {
+            if (lockMouse)
+                Input.SetCursorPosition(GetWindowSize() / 2);
         }
     }
 }
